@@ -1,0 +1,10 @@
+# Azure Pipelines for Boost.GIL
+
+jobs:
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+  - checkout: none
+  - script: echo Hello from GIL
+  - script: gcc --version
