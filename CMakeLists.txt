@@ -156,6 +156,8 @@ target_compile_definitions(gil_dependencies
   INTERFACE
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:BOOST_TEST_DYN_LINK>)
 
+find_package(zlib)
+target_link_libraries(gil_dependencies INTERFACE ZLIB::ZLIB)
 #-----------------------------------------------------------------------------
 # Dependency: libpng, libjpeg, libtiff, libraw via Vcpkg or Conan
 #-----------------------------------------------------------------------------

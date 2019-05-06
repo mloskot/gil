@@ -15,13 +15,25 @@
 #include <boost/gil/extension/dynamic_image/dynamic_image_all.hpp>
 
 #include <boost/core/ignore_unused.hpp>
+
+#define XXX_BOOST_CRC32 1
+//#define XXX_INTERNAL_CRC32 1
+//#define XXX_ZLIB_CRC32
+#ifdef XXX_ZLIB_CRC32
+#include <zlib.h>
+#endif
+#ifdef XXX_BOOST_CRC32
 #include <boost/crc.hpp>
+#endif
 #include <boost/mp11.hpp>
 
+#include <cstdint>
+#include <array>
 #include <ios>
 #include <iostream>
 #include <fstream>
 #include <map>
+#include <numeric>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -41,8 +53,56 @@ void error_if(bool condition);
 
 // When BOOST_GIL_GENERATE_REFERENCE_DATA is defined, the reference data is generated and saved.
 // When it is undefined, regression tests are checked against it
-//#define BOOST_GIL_GENERATE_REFERENCE_DATA
+#define BOOST_GIL_GENERATE_REFERENCE_DATA
 
+#ifdef XXX_INTERNAL_CRC32
+namespace {
+// Generates a lookup table for the checksums of all 8-bit values.
+std::array<std::uint_fast32_t, 256> generate_crc_lookup_table() noexcept
+{
+  auto const reversed_polynomial = std::uint_fast32_t{0xEDB88320uL};
+ 
+  // This is a function object that calculates the checksum for a value,
+  // then increments the value, starting from zero.
+  struct byte_checksum
+  {
+    std::uint_fast32_t operator()() noexcept
+    {
+      auto checksum = static_cast<std::uint_fast32_t>(n++);
+ 
+      for (auto i = 0; i < 8; ++i)
+        checksum = (checksum >> 1) ^ ((checksum & 0x1u) ? reversed_polynomial : 0);
+ 
+      return checksum;
+    }
+ 
+    unsigned n = 0;
+  };
+ 
+  auto table = std::array<std::uint_fast32_t, 256>{};
+  std::generate(table.begin(), table.end(), byte_checksum{});
+ 
+  return table;
+}
+ 
+// Calculates the CRC for any sequence of values. (You could use type traits and a
+// static assert to ensure the values can be converted to 8 bits.)
+template <typename InputIterator>
+std::uint_fast32_t internal_crc32(InputIterator first, InputIterator last)
+{
+  // Generate lookup table only on first use then cache it - this is thread-safe.
+  static auto const table = generate_crc_lookup_table();
+ 
+  // Calculate the checksum - make sure to clip to 32 bits, for systems that don't
+  // have a true (fast) 32-bit type.
+  return std::uint_fast32_t{0xFFFFFFFFuL} &
+    ~std::accumulate(first, last,
+      ~std::uint_fast32_t{0} & std::uint_fast32_t{0xFFFFFFFFuL},
+        [](std::uint_fast32_t checksum, std::uint_fast8_t value) 
+          { return table[(checksum ^ value) & 0xFFu] ^ (checksum >> 8); });
+}
+}
+#endif
 ////////////////////////////////////////////////////
 ///
 ///  Some algorithms to use in testing
@@ -400,7 +460,8 @@ void image_test::run() {
 class checksum_image_mgr : public image_test
 {
 protected:
-    using crc_map_t = map<string, boost::crc_32_type::value_type>;
+    using crc_result_t = std::uint32_t;
+    using crc_map_t = map<string, crc_result_t>;
     crc_map_t _crc_map;
 };
 
@@ -421,7 +482,7 @@ private:
 
 // Load the checksums from the reference file and create the start image
 void checksum_image_test::initialize() {
-    boost::crc_32_type::value_type crc_result;
+    crc_result_t crc_result;
     fstream checksum_ref(_filename,ios::in);
     while (true) {
         string crc_name;
@@ -439,8 +500,21 @@ void checksum_image_test::initialize() {
 
 // Create a checksum for the given view and compare it with the reference checksum. Throw exception if different
 void checksum_image_test::check_view_impl(const rgb8c_view_t& img_view, const string& name) {
+#ifdef XXX_BOOST_CRC32
     boost::crc_32_type checksum_acumulator;
     checksum_acumulator.process_bytes(img_view.row_begin(0),img_view.size()*3);
+    crc_result_t const crc = checksum_acumulator.checksum();
+#endif
+#ifdef XXX_INTERNAL_CRC32
+    std::uint8_t const* beg = interleaved_view_get_raw_data(img_view);
+    std::uint8_t const* end = beg + img_view.size() * 3;
+    crc_result_t const crc = internal_crc32(beg, end);
+#endif
+#ifdef XXX_ZLIB_CRC32
+    std::uint8_t const* beg = interleaved_view_get_raw_data(img_view);
+    crc_result_t crc = crc32(0L, Z_NULL, 0);
+    crc = crc32(crc, beg, img_view.size()*3);
+#endif
     unsigned int const crc_expect = _crc_map[name];
     if (crc_expect == 0)
     {
@@ -448,8 +522,7 @@ void checksum_image_test::check_view_impl(const rgb8c_view_t& img_view, const st
         return;
     }
 
-    boost::crc_32_type::value_type const crc = checksum_acumulator.checksum();
-    if (crc==crc_expect) {
+    if (crc==crc_expect) { 
         cerr << "Checking checksum for " << name << " (crc=" << std::hex << crc << ")" << endl;
     }
     else {
@@ -476,17 +549,30 @@ private:
 
 // Add the checksum of the given view to the map of checksums
 void checksum_image_generate::check_view_impl(const rgb8c_view_t& img_view, const string& name) {
+#ifdef XXX_BOOST_CRC32
     boost::crc_32_type result;
     result.process_bytes(img_view.row_begin(0),img_view.size()*3);
+    crc_result_t const crc = result.checksum();
+#endif
+#ifdef XXX_INTERNAL_CRC32
+    std::uint8_t const* beg = interleaved_view_get_raw_data(img_view);
+    std::uint8_t const* end = beg + img_view.size() * 3;
+    crc_result_t const crc = internal_crc32(beg, end);
+#endif
+#ifdef XXX_ZLIB_CRC32
+    std::uint8_t const* beg = interleaved_view_get_raw_data(img_view);
+    crc_result_t crc = crc32(0L, Z_NULL, 0);
+    crc = crc32(crc, beg, img_view.size()*3);
+#endif
     cerr << "Generating checksum for " << name << endl;
-    _crc_map[name] = result.checksum();
+    _crc_map[name] = crc;
 }
 
 // Save the checksums into the reference file
 void checksum_image_generate::finalize() {
     fstream checksum_ref(_filename,ios::out);
     for (crc_map_t::const_iterator it=_crc_map.begin(); it!=_crc_map.end(); ++it) {
-        checksum_ref << it->first << " " << std::hex << it->second << "\r\n";
+        checksum_ref << it->first << " " << std::hex << it->second << "\n";
     }
     checksum_ref.close();
 }
