@@ -251,7 +251,7 @@ private:
         using view_t = typename Image::view_t;
 
         // make a 20x20 image
-        Image img({20, 20});
+        Image img(typename view_t::point_t{20, 20});
         view_t const& img_view = view(img);
 
         // Fill it with red
