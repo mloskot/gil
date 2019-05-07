@@ -28,6 +28,7 @@
 #pragma GCC diagnostic ignored "-Wshadow"
 #endif
 
+#include <boost/test/framework.hpp>
 #include <boost/test/unit_test.hpp>
 
 #if defined(_MSC_VER)

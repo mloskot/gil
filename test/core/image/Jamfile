@@ -9,3 +9,5 @@
 import testing ;
 
 compile concepts.cpp ;
+
+build-project checksum ;
