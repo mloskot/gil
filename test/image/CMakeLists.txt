@@ -22,3 +22,5 @@ foreach(_name
   unset(_name)
   unset(_target)
 endforeach()
+
+add_subdirectory(checksum)

@@ -1,0 +1,19 @@
+# Boost.GIL (Generic Image Library) - tests
+#
+# Copyright (c) 2019 Mateusz Loskot <mateusz at loskot dot net>
+#
+# See the accompanying README.md for details about the checksum tests.
+#
+import testing ;
+
+project
+    : requirements
+    <include>../..
+    ;
+
+run calculate.cpp sample_image_data.cpp /boost/test//boost_unit_test_framework
+  : --
+  : reference_checksums.txt
+  : <link>static
+  ;
+exe generate : generate.cpp sample_image_data.cpp ;
