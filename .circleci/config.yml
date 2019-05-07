@@ -281,25 +281,7 @@ steps_test_core: &steps_test_core
   steps:
     - *attach_workspace
     - *run_compiler_version
-    - run: cd boost-root && ./b2 toolset=$TOOLSET $VARIANT $OPTIMIZ cxxstd="$CXXSTD" libs/gil/test
-
-steps_test_toolbox: &steps_test_toolbox
-  steps:
-    - *attach_workspace
-    - *run_compiler_version
-    - run: cd boost-root && ./b2 toolset=$TOOLSET $VARIANT $OPTIMIZ cxxstd="$CXXSTD" libs/gil/toolbox/test
-
-steps_test_numeric: &steps_test_numeric
-  steps:
-    - *attach_workspace
-    - *run_compiler_version
-    - run: cd boost-root && ./b2 toolset=$TOOLSET $VARIANT $OPTIMIZ cxxstd="$CXXSTD" libs/gil/numeric/test
-
-steps_test_io: &steps_test_io
-  steps:
-    - *attach_workspace
-    - *run_compiler_version
-    - run: cd boost-root && ./b2 toolset=$TOOLSET $VARIANT $OPTIMIZ cxxstd="$CXXSTD" libs/gil/io/test//simple
+    - run: cd boost-root && ./b2 toolset=$TOOLSET $VARIANT $OPTIMIZ cxxstd="$CXXSTD" libs/gil/test/checksum
 
 ##############################################################################
 # Build jobs

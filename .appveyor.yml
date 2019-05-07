@@ -118,16 +118,13 @@ before_build:
 build: off
 
 build_script:
-  - if NOT DEFINED GENERATOR b2 address-model=%AM% toolset=%TOOLSET% variant=%VARIANT% cxxstd=%CXXSTD% libs/gil/test
-  - if NOT DEFINED GENERATOR b2 address-model=%AM% toolset=%TOOLSET% variant=%VARIANT% cxxstd=%CXXSTD% libs/gil/toolbox/test
-  - if NOT DEFINED GENERATOR b2 address-model=%AM% toolset=%TOOLSET% variant=%VARIANT% cxxstd=%CXXSTD% libs/gil/numeric/test
-  - if NOT DEFINED GENERATOR b2 address-model=%AM% toolset=%TOOLSET% variant=%VARIANT% cxxstd=%CXXSTD% include=%VCPKG_I% library-path=%VCPKG_L% libs/gil/io/test//simple
+  - if NOT DEFINED GENERATOR b2 address-model=%AM% toolset=%TOOLSET% variant=%VARIANT% cxxstd=%CXXSTD% libs/gil/test/image/checksum
   - if DEFINED GENERATOR cd libs\gil && md build && cd build
   - if DEFINED GENERATOR cmake -G "%GENERATOR%" -DCMAKE_CXX_STANDARD=%CXXSTD% -DBoost_DETAILED_FAILURE_MSG=ON -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
   - if DEFINED GENERATOR cmake --build . --config %CMAKE_CONFIG %
 
 test_script:
-  - if DEFINED GENERATOR ctest -V --output-on-failure -C %VARIANT%
+  - if DEFINED GENERATOR ctest -V --output-on-failure -C %VARIANT% -R checksum
 
 notifications:
   - provider: Webhook
