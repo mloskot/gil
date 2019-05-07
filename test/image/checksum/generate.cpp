@@ -12,6 +12,7 @@
 #ifdef _MSC_VER
 #pragma warning(disable:4244) // conversion from 'gil::image<V,Alloc>::coord_t' to 'int', possible loss of data (visual studio compiler doesn't realize that the two types are the same)
 #pragma warning(disable:4701) // potentially uninitialized local variable 'result' used in boost/crc.hpp
+#pragma warning(disable:4800) // 'unsigned int': forcing value to bool 'true' or 'false' (performance warning)
 #endif
 #include <boost/gil.hpp>
 #include <boost/crc.hpp>
