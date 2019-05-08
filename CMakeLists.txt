@@ -138,7 +138,6 @@ endif()
 find_package(Boost 1.65.0 REQUIRED
   COMPONENTS
     filesystem
-    system
     unit_test_framework)
 message(STATUS "Boost.GIL: Using Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
 message(STATUS "Boost.GIL: Using Boost_LIBRARY_DIRS=${Boost_LIBRARY_DIRS}")
@@ -151,10 +150,6 @@ target_link_libraries(gil_dependencies
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
   target_link_libraries(gil_dependencies INTERFACE Boost::disable_autolinking)
 endif()
-
-target_compile_definitions(gil_dependencies
-  INTERFACE
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:BOOST_TEST_DYN_LINK>)
 
 #-----------------------------------------------------------------------------
 # Dependency: libpng, libjpeg, libtiff, libraw via Vcpkg or Conan

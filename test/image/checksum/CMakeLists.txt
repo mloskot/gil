@@ -24,4 +24,6 @@ target_link_libraries(test_core_image_checksum_calculate
     gil_compile_options
     gil_include_directories
     gil_dependencies)
-add_test(test.core.image.checksum.calculate test_core.image_checksum_calculate)
+add_test(test.core.image.checksum.calculate
+  test_core.image_checksum_calculate
+  ${CMAKE_CURRENT_SOURCE_DIR}/reference_checksums.txt)
